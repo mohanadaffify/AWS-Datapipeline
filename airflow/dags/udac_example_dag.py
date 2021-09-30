@@ -11,7 +11,7 @@ from helpers import SqlQueries
 
 default_args = {
     'owner': 'udacity',
-    'start_date': datetime.datetime.now(),
+    'start_date': datetime.now(),
     'depends_on_past': False,
     'retries': 3,
     'email_on_retry': False,
@@ -19,8 +19,7 @@ default_args = {
 }
 dag = DAG('udac_example_dag',
           default_args=default_args,
-          description='Load and transform data in Redshift with Airflow',
-          datetime.datetime.now()
+          description='Load and transform data in Redshift with Airflow'
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -59,11 +58,10 @@ load_songplays_table = LoadFactOperator(
 
 load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',
-    dag=dag
+    dag=dag,
     table='users',
     redshift_conn_id="redshift",
     load_sql_statment=SqlQueries.user_table_insert
-)
 )
 
 load_song_dimension_table = LoadDimensionOperator(
@@ -95,7 +93,7 @@ run_quality_checks = DataQualityOperator(
     dag=dag,
     provide_context=True,
     params={
-        'table': 'artists', 'songplays', 'songs', 'users'
+        'table': ('artists', 'songplays', 'songs', 'users')
     }
 
 )
