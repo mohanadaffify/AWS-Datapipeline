@@ -66,4 +66,4 @@ $ python create_cluster.py --delete
 ## Pipeline
 
 **Standard DAG**
-![DAG-Graph](images/dag-graph.png?raw=true)
+![DAG-Graph](imag/dag-graph.png?raw=true)
