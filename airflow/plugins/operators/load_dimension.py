@@ -18,6 +18,7 @@ class LoadDimensionOperator(BaseOperator):
                  table="",
                  redshift_conn_id="",
                  load_sql_statment="",
+                 append_data="",
                  *args, **kwargs):
 
         super(LoadDimensionOperator, self).__init__(*args, **kwargs)
@@ -26,14 +27,21 @@ class LoadDimensionOperator(BaseOperator):
         self.load_sql_statment=load_sql_statment
 
     def execute(self, context):
-        redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
-        self.log.info(f"Deleting dimension table data : {self.table}")
-        redshift.run(LoadDimensionOperator.delete_sql.format(self.table))
-        
-        formatted_sql = LoadDimensionOperator.insert_sql.format(
-            self.table,
-            self.load_sql_statment
-              )
-        
-        self.log.info(f"Loading Dimensions table '{self.table}' into Redshift")
-        redshift.run(formatted_sql)
+        if self.append_data ==True:
+            redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
+            self.log.info(f"Deleting dimension table data : {self.table}")
+            redshift.run(LoadDimensionOperator.delete_Sql.format(self.table)) 
+            formatted_sql = LoadDimensionOperator.insert_sql.format(
+                            self.table,
+                            self.load_sql_statment
+                                           )
+            self.log.info(f"Loading Dimensions table '{self.table}' into Redshift")
+            redshift.run(formatted_sql)
+        else:
+            formatted_sql = LoadDimensionOperator.insert_sql.format(
+                            self.table,
+                            self.load_sql_statment
+                                           )
+            self.log.info(f"Loading Dimensions table '{self.table}' into Redshift")
+            redshift.run(formatted_sql)
+            

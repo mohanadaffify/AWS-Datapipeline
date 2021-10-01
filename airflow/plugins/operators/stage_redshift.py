@@ -53,7 +53,7 @@ class StageToRedshiftOperator(BaseOperator):
             credentials.access_key,
             credentials.secret_key,
             self.region,
-            self.extra_params
+            self.extra_parameter
         )
         
         self.log.info(f"Executing query to copy data from '{s3_path}' to '{self.table}'")

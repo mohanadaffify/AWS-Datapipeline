@@ -6,8 +6,8 @@ from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
+#AWS_KEY= os.environ.get('AWS_KEY')
+#AWS_SE CRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'udacity',
@@ -15,11 +15,14 @@ default_args = {
     'depends_on_past': False,
     'retries': 3,
     'email_on_retry': False,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=5),
+    'schedule_interval': '@hourly' , 
+    'max_active_runs' : 1
 }
 dag = DAG('udac_example_dag',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow'
+        
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -61,6 +64,7 @@ load_user_dimension_table = LoadDimensionOperator(
     dag=dag,
     table='users',
     redshift_conn_id="redshift",
+    append_data=True,
     load_sql_statment=SqlQueries.user_table_insert
 )
 
@@ -69,6 +73,7 @@ load_song_dimension_table = LoadDimensionOperator(
     dag=dag,
     table='songs',
     redshift_conn_id="redshift",
+    append_data=True,
     load_sql_statment=SqlQueries.song_table_insert
 )
 
@@ -77,6 +82,7 @@ load_artist_dimension_table = LoadDimensionOperator(
     dag=dag,
     table='artists',
     redshift_conn_id="redshift",
+    append_data=True,
     load_sql_statment=SqlQueries.artist_table_insert
 )
 
@@ -85,17 +91,24 @@ load_time_dimension_table = LoadDimensionOperator(
     dag=dag,
     table='time',
     redshift_conn_id="redshift",
+    append_data=True,
     load_sql_statment=SqlQueries.time_table_insert
 )
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
-    provide_context=True,
-    params={
-        'table': ('artists', 'songplays', 'songs', 'users')
-    }
-
+    dq_checks=[
+        { 'check_sql': 'SELECT COUNT(*) FROM public.songplays WHERE userid IS NULL', 'expected_result': 0 }, 
+        { 'check_sql': 'SELECT COUNT(DISTINCT "level") FROM public.songplays', 'expected_result': 2 },
+        { 'check_sql': 'SELECT COUNT(*) FROM public.artists WHERE name IS NULL', 'expected_result': 0 },
+        { 'check_sql': 'SELECT COUNT(*) FROM public.songs WHERE title IS NULL', 'expected_result': 0 },
+        { 'check_sql': 'SELECT COUNT(*) FROM public.users WHERE first_name IS NULL', 'expected_result': 0 },
+        { 'check_sql': 'SELECT COUNT(*) FROM public."time" WHERE weekday IS NULL', 'expected_result': 0 },
+        { 'check_sql': 'SELECT COUNT(*) FROM public.songplays sp LEFT OUTER JOIN public.users u ON u.userid = sp.userid WHERE u.userid IS NULL', \
+         'expected_result': 0 }
+    ],
+    redshift_conn_id="redshift"
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
